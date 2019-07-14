@@ -1,5 +1,6 @@
 module DerivativeFreeSolvers
+using LinearAlgebra
+using NLPModels,SolverTools
 
-greet() = print("Hello World!")
-
+include("coordinate_search.jl")
 end # module
