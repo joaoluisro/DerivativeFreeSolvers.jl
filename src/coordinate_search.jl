@@ -25,7 +25,8 @@ status =:unknown
 @info log_header([:iter, :f, :H],[Int, T, T], hdr_override=Dict(:f=>"f(x)", :H=>"α"))
 
 while !(optimal || tired)
-	@info log_row([k, obj(nlp,xk), α])
+	f = obj(nlp,xk)
+	@info log_row(Any[k, f, α])
 
 	for i in 1:nlp.meta.nvar
 		success = false
