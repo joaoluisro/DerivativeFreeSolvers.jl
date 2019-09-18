@@ -30,7 +30,7 @@ function nelder_mead(nlp :: AbstractNLPModel;
     end
   end
 
-  pairs = [(x, obj(nlp, x)) for x in vertices]
+  pairs = [[x, obj(nlp, x)] for x in vertices]
   sort!(pairs, by=x->x[2])
 
   x_trial = zeros(eltype(x), n)
@@ -48,41 +48,46 @@ function nelder_mead(nlp :: AbstractNLPModel;
 
     shrink = true
     x_cen = sum(pairs[i][1] for i in 1:n)/T(n)
-    x_trial = (x_cen * (1 - ref_prm) + ref_prm * last(pairs)[1])
+    x_trial .= (x_cen * (1 - ref_prm) + ref_prm * last(pairs)[1])
     f_ref = obj(nlp, x_trial)
     f_bver = pairs[1][2]
 
     @info log_row(Any[k, f_bver, norm_opt])
     # Reflection
     if pairs[1][2] ≤ f_ref < pairs[n][2]
-      pairs[n+1] = (x_trial, f_ref)
+      pairs[n+1][1] .= x_trial
+      pairs[n+1][2] = f_ref
       shrink = false
     # Expansion
     elseif f_ref < pairs[1][2]
       x_trial .= (x_cen + exp_prm * (pairs[n+1][1] - x_cen))
       f_exp = obj(nlp,x_trial)
       if f_exp < f_ref
-         pairs[n+1] = (x_trial, f_exp)
+        pairs[n+1][1] .= x_trial
+        pairs[n+1][2] = f_exp
       else
-         pairs[n+1] = (x_cen + ref_prm * (pairs[n+1][1] - x_cen), f_ref)
+        pairs[n+1][1] .= x_cen + ref_prm * (pairs[n+1][1] - x_cen)
+        pairs[n+1][2] = f_ref
       end
       shrink = false
-    # Contraction
+      # Contraction
     elseif f_ref ≥ pairs[n][2]
       # Outside
       if pairs[n][2] ≤ f_ref < pairs[n+1][2]
         x_trial .= (x_cen * (1 - ocn_prm) + ocn_prm * pairs[n+1][1])
         f_ocn = obj(nlp, x_trial)
         if f_ocn ≤ f_ref
-          pairs[n+1] = (x_trial, f_ocn)
+          pairs[n+1][1] .= x_trial
+          pairs[n+1][2] = f_ocn
           shrink = false
         end
-      # Inside
+        # Inside
       else
         x_trial .= (x_cen * (1 - icn_prm) + icn_prm * pairs[n+1][1])
         f_icn = obj(nlp, x_trial)
         if f_icn < pairs[n+1][2]
-          pairs[n+1] = (x_trial, f_icn)
+          pairs[n+1][1] .= x_trial
+          pairs[n+1][2] = f_icn
           shrink = false
         end
       end
@@ -91,7 +96,8 @@ function nelder_mead(nlp :: AbstractNLPModel;
     if shrink
       for i = 2:n+1
         aux = (pairs[i][1] + pairs[1][1])/2
-        pairs[i] = (aux, obj(nlp,aux))
+        pairs[i][1] .= aux
+        pairs[i][2] = obj(nlp, aux)
       end
     end
 
